@@ -1,76 +1,63 @@
 import React from 'react';
+import { ConfigProvider, DatePicker, Space, Typography } from 'antd';
 import type { DatePickerProps } from 'antd';
-import { Button, DatePicker, Flex, Slider, Space, Typography } from 'antd';
+import en from 'antd/es/date-picker/locale/en_US';
+import enUS from 'antd/es/locale/en_US';
 import dayjs from 'dayjs';
-import type { Dayjs } from 'dayjs';
+import buddhistEra from 'dayjs/plugin/buddhistEra';
 
-const onChange: DatePickerProps['onChange'] = (date, dateString) => {
-  console.log(date, dateString);
+dayjs.extend(buddhistEra);
+
+const { Title } = Typography;
+
+// Component level locale
+const buddhistLocale: typeof en = {
+  ...en,
+  lang: {
+    ...en.lang,
+    fieldDateFormat: 'BBBB-MM-DD',
+    fieldDateTimeFormat: 'BBBB-MM-DD HH:mm:ss',
+    yearFormat: 'BBBB',
+    cellYearFormat: 'BBBB',
+  },
 };
 
-type DateComponent = Required<NonNullable<DatePickerProps<Dayjs>['components']>>['date'];
-type GetProps<T> = T extends React.ComponentType<infer P> ? P : never;
+// ConfigProvider level locale
+const globalBuddhistLocale: typeof enUS = {
+  ...enUS,
+  DatePicker: {
+    ...enUS.DatePicker!,
+    lang: buddhistLocale.lang,
+  },
+};
 
-const MyDatePanel = (props: GetProps<DateComponent>) => {
-  const { value, onSelect, onHover } = props;
+const defaultValue = dayjs('2024-01-01');
 
-  // Value
-  const startDate = React.useMemo(() => dayjs().date(1).month(0), []);
-  const [innerValue, setInnerValue] = React.useState(value || startDate);
+const App: React.FC = () => {
+  const onChange: DatePickerProps['onChange'] = (_, dateStr) => {
+    console.log('onChange:', dateStr);
+  };
 
-  React.useEffect(() => {
-    if (value) {
-      setInnerValue(value);
-    }
-  }, [value]);
-
-  // Range
-  const dateCount = React.useMemo(() => {
-    const endDate = startDate.add(1, 'year').add(-1, 'day');
-    return endDate.diff(startDate, 'day');
-  }, [startDate]);
-
-  const sliderValue = Math.min(Math.max(0, innerValue.diff(startDate, 'day')), dateCount);
-
-  // Render
   return (
-    <Flex vertical gap="small" style={{ padding: 16 }}>
-      <Typography.Title level={4} style={{ margin: 0 }} title="no, it's not">
-        The BEST Picker Panel
-      </Typography.Title>
-      <Slider
-        min={0}
-        max={dateCount}
-        value={sliderValue}
-        onChange={(nextValue) => {
-          const nextDate = startDate.add(nextValue, 'day');
-          setInnerValue(nextDate);
-          onHover?.(nextDate);
-        }}
-        tooltip={{
-          formatter: (nextValue) => startDate.add(nextValue || 0, 'day').format('YYYY-MM-DD'),
-        }}
+    <Space direction="vertical">
+      <Title level={4}>By locale props</Title>
+      <DatePicker defaultValue={defaultValue} locale={buddhistLocale} onChange={onChange} />
+      <DatePicker
+        defaultValue={defaultValue}
+        showTime
+        locale={buddhistLocale}
+        onChange={onChange}
       />
-      <Button
-        type="primary"
-        onClick={() => {
-          onSelect(innerValue);
-        }}
-      >{`That's It!`}</Button>
-    </Flex>
+
+      <Title level={4}>By ConfigProvider</Title>
+      <ConfigProvider locale={globalBuddhistLocale}>
+        <Space direction="vertical">
+          <DatePicker defaultValue={defaultValue} onChange={onChange} />
+          <DatePicker defaultValue={defaultValue} showTime onChange={onChange} />
+        </Space>
+      </ConfigProvider>
+    </Space>
   );
 };
-
-const App: React.FC = () => (
-  <Space direction="vertical">
-    <DatePicker
-      showNow={false}
-      onChange={onChange}
-      components={{
-        date: MyDatePanel,
-      }}
-    />
-  </Space>
-);
 
 export default App;
