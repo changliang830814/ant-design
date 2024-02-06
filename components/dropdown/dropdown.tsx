@@ -177,7 +177,7 @@ const Dropdown: CompoundedComponent = (props) => {
 
   const child = React.Children.only(children) as React.ReactElement<any>;
 
-  const dropdownTrigger = cloneElement(child, {
+  const dropdownTriggerProps: { className: string; disabled?: boolean } = {
     className: classNames(
       `${prefixCls}-trigger`,
       {
@@ -185,8 +185,11 @@ const Dropdown: CompoundedComponent = (props) => {
       },
       child.props.className,
     ),
-    disabled,
-  });
+  };
+  if (typeof disabled !== 'undefined') {
+    dropdownTriggerProps.disabled = disabled;
+  }
+  const dropdownTrigger = cloneElement(child, dropdownTriggerProps);
 
   const triggerActions = disabled ? [] : trigger;
   let alignPoint: boolean;
